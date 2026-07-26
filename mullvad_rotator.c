@@ -1,7 +1,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <pcre2posix.h> //because im on windows i cant use "regex.h" but if you'r on linux/mac replace it by "regex.h"
+#include <pcre2posix.h> //because im using windows, i can't use "regex.h" but if you're using linux/mac, replace it with "regex.h"
 #include <time.h>
 
 char *get_relays_info();
@@ -28,6 +28,7 @@ int main(int argc, char **argv) {
         print_relays_list_formatted();
 
     } else if (strcmp(argv[1], "connect") == 0) {
+        // for the now, only the "random" command is supported, but ill improve it later
         if (argv[2] != NULL && strcmp(argv[2], "random") == 0) {
             connect_random_relay();
         } else {
@@ -51,7 +52,7 @@ char *get_relays_info() {
         return NULL;
     }
 
-    //execute the command
+    //run the command to display all Mullvad relay servers
     FILE *cmd = popen("mullvad relay list", "r");
 
     if (cmd == NULL) {
@@ -59,7 +60,7 @@ char *get_relays_info() {
         return NULL;
     }
 
-    //get result-content of the command
+    //get the content of the command's output
     while (1) {
         //if there is no more space in our buffer, we have to make it bigger
         if (size == capacity - 1) {
@@ -78,18 +79,18 @@ char *get_relays_info() {
         int nb_read = fread(buffer + size, sizeof(char), empty_space, cmd);
         size += nb_read;
 
-        //at the end of the content, adding '\0' to properly end the string
+        //at the end of the content, add '\0' to properly end the string
         if (nb_read == 0) {
             buffer[size] = '\0';
             break;
         }        
     }
 
-    //closing the "file" = the result content of the command
+    //closing the "file" = the content of the command's output
     int value_pclose = pclose(cmd);
     
     if (value_pclose != 0) {
-        printf("Error when closing result content of the cmd");
+        perror("Error when closing result content of the cmd");
     }
 
     return buffer;
@@ -98,30 +99,31 @@ char *get_relays_info() {
 char **get_array_relays_list(char *relay_list, int *nb_relays) {
     regex_t re;
     regmatch_t match[1];
+
     char* cursor = relay_list;
     int nb_result = 0;
 
-    const char *pattern = "([a-z]+)-([a-z]+)-wg-([0-9]+)";
+    //pattern detection of Mullvad relay server names
+    const char *pattern = "[a-z]+-[a-z]+-wg-[0-9]+";
 
-    //creating an array that will contains string
+    //create an array that will contains strings
     int capacity = 1024;
     int size = 0;
-
     char **results = malloc(capacity * sizeof(char*));
 
     if (results == NULL) {
         return NULL;
     }
 
-    //compiling regex
+    //compile regex
     if (regcomp(&re, pattern, REG_EXTENDED)) {
         perror("regex compile failed");
         return NULL;
     }
 
-    //execute
+    //execute regex
     while(regexec(&re, cursor, 1, match, 0) == 0 && nb_result < 1000) {
-        //if there is no more space in our result array of strings, we have to make it bigger
+        //if there is no more space in our array of strings containing the results, we have to make it bigger
         if (size == capacity - 1) {
             capacity *= 2;
             char **temp = realloc(results, capacity * sizeof(char*));
@@ -133,12 +135,15 @@ char **get_array_relays_list(char *relay_list, int *nb_relays) {
             results = temp;           
         }
 
+        //create a new buffer for the match of our regex
         char *result_i = malloc((int)(match[0].rm_eo - match[0].rm_so) + 1);
         strncpy(result_i, cursor + match[0].rm_so, (int)(match[0].rm_eo - match[0].rm_so));
         result_i[(int)(match[0].rm_eo - match[0].rm_so)] = '\0';
 
+        //add the match to the arrays
         results[size] = result_i;
 
+        //move the cursor to detect the following relays
         cursor += match[0].rm_eo;
         nb_result++;
         size++;
@@ -156,6 +161,7 @@ char **get_array_relays_list(char *relay_list, int *nb_relays) {
 int get_relay_count() {
     int nb_relays = 0;
 
+    //get the list of mullvad relay servers and store them in an array
     char *relay_list = get_relays_info();
     char **matchs = get_array_relays_list(relay_list, &nb_relays);
 
@@ -168,9 +174,11 @@ int get_relay_count() {
 void print_relays_list_formatted() {
     int nb_relays = 0;
     
+    //get the list of mullvad relay servers and store them in an array
     char *relay_list = get_relays_info();
     char **matchs = get_array_relays_list(relay_list, &nb_relays);
 
+    //browse the array to display the name of each relay
     for (int i = 0; i < nb_relays; i++) {
         printf("%s\n", matchs[i]);
     }
@@ -182,15 +190,17 @@ void print_relays_list_formatted() {
 void connect_random_relay() {
     int nb_relays = 0;
 
+    //get the list of mullvad relay servers and store them in an array
     char *relay_list = get_relays_info();
     char **matchs = get_array_relays_list(relay_list, &nb_relays);
 
+    //get a random relay server
     srand(time(NULL));
     int random_number = (rand() % (nb_relays));
     printf("random relay picked: %s\n", matchs[random_number]);
 
+    //format a command to pick the selected server
     int cmd_len = strlen("mullvad relay set location ") + strlen(matchs[random_number]);
-
     char *relay_set_cmd = malloc(cmd_len);
     snprintf(relay_set_cmd, cmd_len, "mullvad relay set location %s", matchs[random_number]);
 
@@ -200,13 +210,16 @@ void connect_random_relay() {
     free(relay_list);
     free_array_of_strings(matchs, nb_relays);
 
+    //connect to mullvad
     system("mullvad connect");
 }
 
 void free_array_of_strings(char **array, int nb_elements) {
+    //free each element of the array
     for (int i = 0; i < nb_elements; i++) {
         free(array[i]);
     }
 
+    //free the array
     free(array);
 }
