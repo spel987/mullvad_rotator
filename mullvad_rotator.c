@@ -3,12 +3,14 @@
 #include <string.h>
 #include <pcre2posix.h> //because im using windows, i can't use "regex.h" but if you're using linux/mac, replace it with "regex.h"
 #include <time.h>
+#include <stdbool.h>
+#include <windows.h>
 
 char *get_relays_info();
 char **get_array_relays_list(char *relay_list, int *nb_relays);
 int get_relay_count();
 void print_relays_list_formatted();
-void connect_random_relay();
+void connect_random_relay(int delay);
 void free_array_of_strings(char **array, int nb_elements);
 
 int main(int argc, char **argv) {
@@ -29,12 +31,14 @@ int main(int argc, char **argv) {
 
     } else if (strcmp(argv[1], "connect") == 0) {
         // for the now, only the "random" command is supported, but ill improve it later
-        if (argv[2] != NULL && strcmp(argv[2], "random") == 0) {
-            connect_random_relay();
+        if (argv[2] != NULL && strcmp(argv[2], "random") == 0 && argv[3] == NULL) {
+            connect_random_relay(120);
+        } else if (argv[2] != NULL && strcmp(argv[2], "random") == 0 && strcmp(argv[3], "-t") && argv[4] != NULL) {
+            
         } else {
             printf("Usage: mullvad_rotator connect <COMMAND>");
             printf("\n\nCommands:\n");
-            printf("\n  %-20s%s\n", "random", "Connect to a random Mullvad relay server");
+            printf("\n  %-20s%s\n", "random <COMMAND>", "Connect to a random Mullvad relay server (<COMMAND>: -t = rotation time (default 120)");
         }
     }
 
@@ -187,31 +191,39 @@ void print_relays_list_formatted() {
     free_array_of_strings(matchs, nb_relays);
 }
 
-void connect_random_relay() {
+void connect_random_relay(int delay) {
     int nb_relays = 0;
 
     //get the list of mullvad relay servers and store them in an array
     char *relay_list = get_relays_info();
     char **matchs = get_array_relays_list(relay_list, &nb_relays);
 
-    //get a random relay server
-    srand(time(NULL));
-    int random_number = (rand() % (nb_relays));
-    printf("random relay picked: %s\n", matchs[random_number]);
+    bool is_running = true;
 
-    //format a command to pick the selected server
-    int cmd_len = strlen("mullvad relay set location ") + strlen(matchs[random_number]);
-    char *relay_set_cmd = malloc(cmd_len);
-    snprintf(relay_set_cmd, cmd_len, "mullvad relay set location %s", matchs[random_number]);
+    do {
+        //get a random relay server
+        srand(time(NULL));
+        int random_number = (rand() % (nb_relays));
+        printf("random relay picked: %s\n", matchs[random_number]);
 
-    system(relay_set_cmd);
+        //format a command to pick the selected server
+        int cmd_len = strlen("mullvad relay set location ") + strlen(matchs[random_number]) + 1;
+        char *relay_set_cmd = malloc(cmd_len);
+        snprintf(relay_set_cmd, cmd_len, "mullvad relay set location %s", matchs[random_number]);
 
-    free(relay_set_cmd);
+        system(relay_set_cmd);
+
+        free(relay_set_cmd);
+
+        //connect to mullvad
+        system("mullvad connect > NUL 2>&1");
+
+        Sleep(delay * 1000);
+    } while (is_running);
+
+    
     free(relay_list);
     free_array_of_strings(matchs, nb_relays);
-
-    //connect to mullvad
-    system("mullvad connect");
 }
 
 void free_array_of_strings(char **array, int nb_elements) {
