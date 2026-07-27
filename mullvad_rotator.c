@@ -12,6 +12,7 @@ int get_relay_count();
 void print_relays_list_formatted();
 void connect_random_relay(int delay);
 void free_array_of_strings(char **array, int nb_elements);
+bool digit_check(char *key);
 
 int main(int argc, char **argv) {
     if (argc < 2) {
@@ -33,12 +34,23 @@ int main(int argc, char **argv) {
         // for the now, only the "random" command is supported, but ill improve it later
         if (argv[2] != NULL && strcmp(argv[2], "random") == 0 && argv[3] == NULL) {
             connect_random_relay(120);
-        } else if (argv[2] != NULL && strcmp(argv[2], "random") == 0 && strcmp(argv[3], "-t") && argv[4] != NULL) {
-            
+        
+        } else if (argv[2] != NULL && strcmp(argv[2], "random") == 0 && strcmp(argv[3], "-t") == 0 && argv[4] != NULL) {
+            if (!digit_check(argv[4])) {
+                printf("Not a valid number.\n");
+                printf("Usage: mullvad_rotator connect random <COMMAND>");
+                printf("\n\nCommands:\n");
+                printf("\n  %-20s%s\n", "-t <COMMAND>", "Connect to a random Mullvad relay server (<COMMAND>: -t = rotation time in seconds (default 120)");
+                return EXIT_FAILURE;
+            } else {
+                connect_random_relay(atoi(argv[4]));
+            }
+        
         } else {
             printf("Usage: mullvad_rotator connect <COMMAND>");
             printf("\n\nCommands:\n");
-            printf("\n  %-20s%s\n", "random <COMMAND>", "Connect to a random Mullvad relay server (<COMMAND>: -t = rotation time (default 120)");
+            printf("\n  %-20s%s\n", "random <COMMAND>", "Connect to a random Mullvad relay server (<COMMAND>: -t = rotation time in seconds (default 120)");
+            return EXIT_FAILURE;
         }
     }
 
@@ -216,7 +228,9 @@ void connect_random_relay(int delay) {
         free(relay_set_cmd);
 
         //connect to mullvad
-        system("mullvad connect > NUL 2>&1");
+        system("mullvad connect");
+
+        printf("Switching relay in %d secondes...\n\n", delay);
 
         Sleep(delay * 1000);
     } while (is_running);
@@ -234,4 +248,14 @@ void free_array_of_strings(char **array, int nb_elements) {
 
     //free the array
     free(array);
+}
+
+bool digit_check(char *key) {
+    int i = 0;
+
+    while (i < strlen(key) && isdigit(key[i])) {
+        i++;
+    }
+
+    return i == strlen(key);
 }
