@@ -6,6 +6,11 @@
 #include <stdbool.h>
 #include <windows.h>
 
+#define COLOR_BOLD "\e[1m"
+#define COLOR_RED "\033[31m"
+#define COLOR_GREEN "\033[32m"
+#define COLOR_OFF "\e[m"
+
 char *get_relays_info();
 char **get_array_relays_list(char *relay_list, int *nb_relays, bool only_owned);
 int get_relay_count(bool only_owned);
@@ -48,11 +53,20 @@ int main(int argc, char **argv) {
 
     array_commands[nb_commands] = NULL;
 
-    if (strcmp(array_commands[1], "relay_count") == 0) {
-        printf("There are currently %d relays available for connection!\n", get_relay_count(only_owned));
-
-    } else if (strcmp(array_commands[1], "relay_list") == 0) {
-        print_relays_list_formatted(only_owned);
+    if (strcmp(array_commands[1], "relay") == 0) {
+        if (array_commands[2] != NULL && strcmp(array_commands[2], "count") == 0) {
+            printf("There are currently %d relays available for connection!\n", get_relay_count(only_owned));
+        } else if (array_commands[2] != NULL && strcmp(array_commands[2], "list") == 0) {
+            print_relays_list_formatted(only_owned);
+        } else {
+            printf("Usage: mullvad_rotator relay <SUBCOMMANDS> [OPTIONS]");
+            printf("\n\nSubcommands:");
+            printf("\n%2s%-30s%s", "", COLOR_BOLD "count" COLOR_OFF, "Display the number of relays available for connection");
+            printf("\n%2s%-30s%s", "", COLOR_BOLD "list" COLOR_OFF, "Display the list of all relays available for connection");
+            printf("\n\nOptions:");
+            printf("\n%2s%-30s%s", "", COLOR_BOLD "--only-owned" COLOR_OFF, "Only use relays owned by Mullvad (excludes rented servers)");
+            return EXIT_FAILURE;
+        }
 
     } else if (strcmp(array_commands[1], "connect") == 0) {
         //connect to a random relay with default rotation time
@@ -62,19 +76,25 @@ int main(int argc, char **argv) {
         //connect to a random relay with a custom rotation time
         } else if (array_commands[2] != NULL && strcmp(array_commands[2], "random") == 0 && strcmp(array_commands[3], "-t") == 0 && array_commands[4] != NULL) {
             if (!digit_check(array_commands[4])) {
-                printf("Not a valid number.\n");
-                printf("Usage: mullvad_rotator connect random <COMMAND>");
-                printf("\n\nCommands:\n");
-                printf("\n  %-20s%s\n", "-t <COMMAND>", "Connect to a random Mullvad relay server (<COMMAND>: -t = rotation time in seconds (default 120)");
+                printf(COLOR_RED "Error: not a valid number\n\n" COLOR_OFF);
+
+                printf("Usage: mullvad_rotator connect random [OPTIONS]");
+                printf("\n\nSubcommands:");
+                printf("\n%2s%-30s%s", "", COLOR_BOLD "-t" COLOR_OFF " <SECONDS>", "Specify the number of seconds for the server rotation (default: 120 seconds)");
+                printf("\n\nOptions:");
+                printf("\n%2s%-30s%s", "", COLOR_BOLD "--only-owned" COLOR_OFF, "Only use relays owned by Mullvad (excludes rented servers)");
                 return EXIT_FAILURE;
             } else {
                 connect_random_relay(atoi(array_commands[4]), only_owned);
             }
         
         } else {
-            printf("Usage: mullvad_rotator connect <COMMAND>");
-            printf("\n\nCommands:\n");
-            printf("\n  %-20s%s\n", "random <COMMAND>", "Connect to a random Mullvad relay server (<COMMAND>: -t = rotation time in seconds (default 120)");
+            printf("Usage: mullvad_rotator connect <SUBCOMMANDS> [OPTIONS]");
+            printf("\n\nSubcommands:");
+            printf("\n%2s%-30s%s", "", COLOR_BOLD "random" COLOR_OFF, "Connect to a random relay server");
+            printf("\n%6s%-26s%s", "", COLOR_BOLD "-t" COLOR_OFF " <SECONDS>", "Specify the number of seconds for the server rotation (default: 120 seconds)");
+            printf("\n\nOptions:");
+            printf("\n%2s%-30s%s", "", COLOR_BOLD "--only-owned" COLOR_OFF, "Only use relays owned by Mullvad (excludes rented servers)");
             return EXIT_FAILURE;
         }
     } else {
@@ -161,7 +181,7 @@ char **get_array_relays_list(char *relay_list, int *nb_relays, bool only_owned) 
 
     //compile regex
     if (regcomp(&re, pattern, REG_EXTENDED)) {
-        perror("regex compile failed");
+        perror("Regex compile failed");
         return NULL;
     }
 
@@ -239,7 +259,7 @@ void print_relays_list_formatted(bool only_owned) {
     char *relay_list = get_relays_info();
     char **matchs = get_array_relays_list(relay_list, &nb_relays, only_owned);
 
-    printf("list of the %d available with your option", nb_relays);
+    printf("List of the %d available with your option", nb_relays);
 
     if (only_owned) {
         printf(" (only owned by Mullvad)\n\n");
@@ -264,7 +284,7 @@ void connect_random_relay(int delay, bool only_owned) {
     char **matchs = get_array_relays_list(relay_list, &nb_relays, only_owned);
 
     if (nb_relays == 0 || matchs == NULL) {
-        printf("error getting relays list\n");
+        printf("Error getting relays list\n");
     }
 
     bool is_running = true;
@@ -273,12 +293,12 @@ void connect_random_relay(int delay, bool only_owned) {
         //get a random relay server
         srand(time(NULL));
         int random_number = (rand() % (nb_relays));
-        printf("random relay picked: %s", matchs[random_number]);
+        printf("--------------------\nRandom relay picked: " COLOR_BOLD COLOR_GREEN "%s" COLOR_OFF, matchs[random_number]);
 
         if (only_owned) {
-            printf(" (owned by Mullvad)\n");
+            printf(" (owned by Mullvad)\n--------------------\n");
         } else {
-            printf("\n");
+            printf("\n--------------------\n");
         }
 
         //format a command to pick the selected server
@@ -293,7 +313,7 @@ void connect_random_relay(int delay, bool only_owned) {
         //connect to mullvad
         system("mullvad connect");
 
-        printf("Switching relay in %d secondes...\n\n", delay);
+        printf("Switching relay in " COLOR_BOLD "%d secondes..." COLOR_OFF "\n--------------------\n\n", delay);
 
         Sleep(delay * 1000);
     } while (is_running);
@@ -324,11 +344,14 @@ bool digit_check(char *key) {
 }
 
 void print_default_usage() {
-    printf("Usage: mullvad_rotator <COMMAND>");
-    printf("\n\nCommands:\n");
-    printf("\n  %-20s%s", "relay_count", "Display the number of relays available for connection");
-    printf("\n  %-20s%s", "relay_list", "Display the list of all relays available for connection");
-    printf("\n  %-20s%s", "connect <COMMAND>", "Connect to a Mullvad relay server (<COMMAND>: random)");
-    printf("\n\nOptions:\n");
-    printf("\n  %-20s%s", "--only-owned", "Only consider relays owned by Mullvad (excludes rented servers)");
+    printf("Usage: mullvad_rotator <COMMAND> [SUBCOMMAND] [OPTIONS]");
+    printf("\n\nCommands:");
+    printf("\n%2s%-30s%s", "", COLOR_BOLD "relay" COLOR_OFF " <COMMAND>", "Count/list relays available for connection (<COMMAND>: count, list)");
+    printf("\n%6s%-26s%s", "", COLOR_BOLD "count" COLOR_OFF, "Display the number of relays available for connection");
+    printf("\n%6s%-26s%s", "", COLOR_BOLD "list" COLOR_OFF, "Display the list of all relays available for connection");
+    printf("\n%2s%-30s%s", "", COLOR_BOLD "connect" COLOR_OFF " <COMMAND>", "Connect to a Mullvad relay server (<COMMAND>: random)");
+    printf("\n%6s%-26s%s", "", COLOR_BOLD "random" COLOR_OFF, "Connect to a random relay server");
+    printf("\n%10s%-22s%s", "", COLOR_BOLD "-t" COLOR_OFF " <SECONDS>", "Specify the number of seconds for the server rotation (default: 120 seconds)");
+    printf("\n\nOptions:");
+    printf("\n%2s%-30s%s", "", COLOR_BOLD "--only-owned" COLOR_OFF, "Only use relays owned by Mullvad (excludes rented servers)");
 }
