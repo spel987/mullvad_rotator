@@ -7,43 +7,68 @@
 #include <windows.h>
 
 char *get_relays_info();
-char **get_array_relays_list(char *relay_list, int *nb_relays);
-int get_relay_count();
-void print_relays_list_formatted();
-void connect_random_relay(int delay);
+char **get_array_relays_list(char *relay_list, int *nb_relays, bool only_owned);
+int get_relay_count(bool only_owned);
+void print_relays_list_formatted(bool only_owned);
+void connect_random_relay(int delay, bool only_owned);
 void free_array_of_strings(char **array, int nb_elements);
 bool digit_check(char *key);
+void print_default_usage();
 
 int main(int argc, char **argv) {
     if (argc < 2) {
-        printf("Usage: mullvad_rotator <COMMAND>");
-        printf("\n\nCommands:\n");
-        printf("\n  %-20s%s", "relay_count", "Display the number of relays available for connection");
-        printf("\n  %-20s%s", "relay_list", "Display the list of all relays available for connection");
-        printf("\n  %-20s%s", "connect <COMMAND>", "Connect to a Mullvad relay server (<COMMAND>: random)");
+        print_default_usage();
         return EXIT_FAILURE;
     }
 
-    if (strcmp(argv[1], "relay_count") == 0) {
-        printf("There are currently %d relays available for connection!\n", get_relay_count());
+    bool only_owned = false;
+    char **array_commands;
 
-    } else if (strcmp(argv[1], "relay_list") == 0) {
-        print_relays_list_formatted();
+    for (int i = 0; i < argc; i++) {
+        if (strcmp(argv[i], "--only-owned") == 0) {
+            only_owned = true;
+        }
+    }
 
-    } else if (strcmp(argv[1], "connect") == 0) {
-        // for the now, only the "random" command is supported, but ill improve it later
-        if (argv[2] != NULL && strcmp(argv[2], "random") == 0 && argv[3] == NULL) {
-            connect_random_relay(120);
+    if (only_owned) {
+        array_commands = malloc((argc - 1) * sizeof(char*));
+    } else {
+        array_commands = malloc((argc) * sizeof(char*));
+    }
+
+    int nb_commands = 0;
+
+    for (int i = 0; i < argc; i++) {
+        if (strcmp(argv[i], "--only-owned") != 0) {
+            char *element_i = argv[i];
+            array_commands[nb_commands] = element_i;
+            nb_commands++;
+        }
+    }
+
+    array_commands[nb_commands] = NULL;
+
+    if (strcmp(array_commands[1], "relay_count") == 0) {
+        printf("There are currently %d relays available for connection!\n", get_relay_count(only_owned));
+
+    } else if (strcmp(array_commands[1], "relay_list") == 0) {
+        print_relays_list_formatted(only_owned);
+
+    } else if (strcmp(array_commands[1], "connect") == 0) {
+        //connect to a random relay with default rotation time
+        if (array_commands[2] != NULL && strcmp(array_commands[2], "random") == 0 && array_commands[3] == NULL) {
+            connect_random_relay(120, only_owned);
         
-        } else if (argv[2] != NULL && strcmp(argv[2], "random") == 0 && strcmp(argv[3], "-t") == 0 && argv[4] != NULL) {
-            if (!digit_check(argv[4])) {
+        //connect to a random relay with a custom rotation time
+        } else if (array_commands[2] != NULL && strcmp(array_commands[2], "random") == 0 && strcmp(array_commands[3], "-t") == 0 && array_commands[4] != NULL) {
+            if (!digit_check(array_commands[4])) {
                 printf("Not a valid number.\n");
                 printf("Usage: mullvad_rotator connect random <COMMAND>");
                 printf("\n\nCommands:\n");
                 printf("\n  %-20s%s\n", "-t <COMMAND>", "Connect to a random Mullvad relay server (<COMMAND>: -t = rotation time in seconds (default 120)");
                 return EXIT_FAILURE;
             } else {
-                connect_random_relay(atoi(argv[4]));
+                connect_random_relay(atoi(array_commands[4]), only_owned);
             }
         
         } else {
@@ -52,6 +77,9 @@ int main(int argc, char **argv) {
             printf("\n  %-20s%s\n", "random <COMMAND>", "Connect to a random Mullvad relay server (<COMMAND>: -t = rotation time in seconds (default 120)");
             return EXIT_FAILURE;
         }
+    } else {
+        print_default_usage();
+        return EXIT_FAILURE;
     }
 
     return 0;
@@ -112,15 +140,15 @@ char *get_relays_info() {
     return buffer;
 }
 
-char **get_array_relays_list(char *relay_list, int *nb_relays) {
+char **get_array_relays_list(char *relay_list, int *nb_relays, bool only_owned) {   
     regex_t re;
-    regmatch_t match[1];
+    regmatch_t match[3];
 
     char* cursor = relay_list;
     int nb_result = 0;
 
     //pattern detection of Mullvad relay server names
-    const char *pattern = "[a-z]+-[a-z]+-wg-[0-9]+";
+    const char *pattern = "([a-z]+-[a-z]+-wg-[0-9]+) \\([0-9.]+, [a-z0-9:]+\\) - hosted by [a-zA-Z0-9]+ \\(([a-zA-Z0-9-]+)\\)";
 
     //create an array that will contains strings
     int capacity = 1024;
@@ -138,7 +166,21 @@ char **get_array_relays_list(char *relay_list, int *nb_relays) {
     }
 
     //execute regex
-    while(regexec(&re, cursor, 1, match, 0) == 0 && nb_result < 1000) {
+    while(regexec(&re, cursor, 3, match, 0) == 0 && nb_result < 1000) {
+        //create a new buffer for the type (rented/owned) of the relay
+        int type_len = match[2].rm_eo - match[2].rm_so;
+        char *type = malloc(type_len + 1);
+    
+        strncpy(type, cursor + match[2].rm_so, type_len);
+
+        type[type_len] = '\0';
+
+        //if we are in the "only owned" mode, we skip the rented ones
+        if (only_owned && strcmp(type, "Mullvad-owned") != 0) {
+            cursor += match[0].rm_eo;
+            continue;
+        }
+
         //if there is no more space in our array of strings containing the results, we have to make it bigger
         if (size == capacity - 1) {
             capacity *= 2;
@@ -151,16 +193,19 @@ char **get_array_relays_list(char *relay_list, int *nb_relays) {
             results = temp;           
         }
 
-        //create a new buffer for the match of our regex
-        char *result_i = malloc((int)(match[0].rm_eo - match[0].rm_so) + 1);
-        strncpy(result_i, cursor + match[0].rm_so, (int)(match[0].rm_eo - match[0].rm_so));
-        result_i[(int)(match[0].rm_eo - match[0].rm_so)] = '\0';
+        //create a new buffer for the name of the relay
+        int name_len = match[1].rm_eo - match[1].rm_so;
+        char *result_i = malloc(name_len + 1);
 
+        strncpy(result_i, cursor + match[1].rm_so, name_len);
+
+        result_i[name_len] = '\0';
+        
         //add the match to the arrays
         results[size] = result_i;
 
         //move the cursor to detect the following relays
-        cursor += match[0].rm_eo;
+        cursor += match[2].rm_eo;
         nb_result++;
         size++;
     }
@@ -174,12 +219,12 @@ char **get_array_relays_list(char *relay_list, int *nb_relays) {
     return results;
 }
 
-int get_relay_count() {
+int get_relay_count(bool only_owned) {
     int nb_relays = 0;
 
     //get the list of mullvad relay servers and store them in an array
     char *relay_list = get_relays_info();
-    char **matchs = get_array_relays_list(relay_list, &nb_relays);
+    char **matchs = get_array_relays_list(relay_list, &nb_relays, only_owned);
 
     free(relay_list);
     free_array_of_strings(matchs, nb_relays);
@@ -187,12 +232,20 @@ int get_relay_count() {
     return nb_relays;
 }
 
-void print_relays_list_formatted() {
+void print_relays_list_formatted(bool only_owned) {
     int nb_relays = 0;
     
     //get the list of mullvad relay servers and store them in an array
     char *relay_list = get_relays_info();
-    char **matchs = get_array_relays_list(relay_list, &nb_relays);
+    char **matchs = get_array_relays_list(relay_list, &nb_relays, only_owned);
+
+    printf("list of the %d available with your option", nb_relays);
+
+    if (only_owned) {
+        printf(" (only owned by Mullvad)\n\n");
+    } else {
+        printf("\n\n");
+    }
 
     //browse the array to display the name of each relay
     for (int i = 0; i < nb_relays; i++) {
@@ -203,12 +256,16 @@ void print_relays_list_formatted() {
     free_array_of_strings(matchs, nb_relays);
 }
 
-void connect_random_relay(int delay) {
+void connect_random_relay(int delay, bool only_owned) {
     int nb_relays = 0;
 
     //get the list of mullvad relay servers and store them in an array
     char *relay_list = get_relays_info();
-    char **matchs = get_array_relays_list(relay_list, &nb_relays);
+    char **matchs = get_array_relays_list(relay_list, &nb_relays, only_owned);
+
+    if (nb_relays == 0 || matchs == NULL) {
+        printf("error getting relays list\n");
+    }
 
     bool is_running = true;
 
@@ -216,7 +273,13 @@ void connect_random_relay(int delay) {
         //get a random relay server
         srand(time(NULL));
         int random_number = (rand() % (nb_relays));
-        printf("random relay picked: %s\n", matchs[random_number]);
+        printf("random relay picked: %s", matchs[random_number]);
+
+        if (only_owned) {
+            printf(" (owned by Mullvad)\n");
+        } else {
+            printf("\n");
+        }
 
         //format a command to pick the selected server
         int cmd_len = strlen("mullvad relay set location ") + strlen(matchs[random_number]) + 1;
@@ -258,4 +321,14 @@ bool digit_check(char *key) {
     }
 
     return i == strlen(key);
+}
+
+void print_default_usage() {
+    printf("Usage: mullvad_rotator <COMMAND>");
+    printf("\n\nCommands:\n");
+    printf("\n  %-20s%s", "relay_count", "Display the number of relays available for connection");
+    printf("\n  %-20s%s", "relay_list", "Display the list of all relays available for connection");
+    printf("\n  %-20s%s", "connect <COMMAND>", "Connect to a Mullvad relay server (<COMMAND>: random)");
+    printf("\n\nOptions:\n");
+    printf("\n  %-20s%s", "--only-owned", "Only consider relays owned by Mullvad (excludes rented servers)");
 }
