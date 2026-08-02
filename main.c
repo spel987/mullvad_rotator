@@ -40,11 +40,16 @@ int main(int argc, char **argv) {
 
     array_commands[nb_commands] = NULL;
 
-    if (strcmp(array_commands[1], "relay") == 0) {
+    if (strcmp(array_commands[1], "help") == 0) {
+        print_default_usage();
+        return 0;
+    } else if (strcmp(array_commands[1], "relay") == 0) {
         if (array_commands[2] != NULL && strcmp(array_commands[2], "count") == 0) {
             printf("There are currently %d relays available for connection!\n", get_relay_count(only_owned));
+            return 0;
         } else if (array_commands[2] != NULL && strcmp(array_commands[2], "list") == 0) {
             print_relays_list_formatted(only_owned);
+            return 0;
         } else {
             printf("Usage: mullvad_rotator relay <SUBCOMMANDS> [OPTIONS]");
             printf("\n\nSubcommands:");

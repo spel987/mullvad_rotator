@@ -5,6 +5,7 @@
 void print_default_usage() {
     printf("Usage: mullvad_rotator <COMMAND> [SUBCOMMAND] [OPTIONS]");
     printf("\n\nCommands:");
+    printf("\n%2s%-30s%s", "", COLOR_BOLD "help" COLOR_OFF, "Display this helper");
     printf("\n%2s%-30s%s", "", COLOR_BOLD "relay" COLOR_OFF " <COMMAND>", "Count/list relays available for connection (<COMMAND>: count, list)");
     printf("\n%6s%-26s%s", "", COLOR_BOLD "count" COLOR_OFF, "Display the number of relays available for connection");
     printf("\n%6s%-26s%s", "", COLOR_BOLD "list" COLOR_OFF, "Display the list of all relays available for connection");

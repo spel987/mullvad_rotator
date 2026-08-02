@@ -6,6 +6,7 @@ Connect to a randomly selected Mullvad relay server and automatically switch to 
 Usage: mullvad_rotator <COMMAND> [SUBCOMMAND] [OPTIONS]
 
 Commands:
+  help                   Display this helper
   relay <COMMAND>        Count/list relays available for connection (<COMMAND>: count, list)
       count              Display the number of relays available for connection
       list               Display the list of all relays available for connection
@@ -16,6 +17,10 @@ Commands:
 Options:
   --only-owned           Only use relays owned by Mullvad (excludes rented servers)
 ```
+
+## Prerequisites
+- Have Mullvad installed
+- Be logged in to a Mullvad account
 
 ## Examples of commands
 ### Connect to a random relay and switch relays every 120 seconds (default)
