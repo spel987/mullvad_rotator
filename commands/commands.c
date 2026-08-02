@@ -8,12 +8,12 @@
 #include "../utils/utils.h"
 #include "../platform/platform.h"
 
-int get_relay_count(bool only_owned) {
+int get_relay_count(bool only_owned, char *country_tag) {
     int nb_relays = 0;
 
     //get the list of mullvad relay servers and store them in an array
     char *relay_list = get_relays_info();
-    char **matchs = get_array_relays_list(relay_list, &nb_relays, only_owned);
+    char **matchs = get_array_relays_list(relay_list, &nb_relays, only_owned, country_tag);
 
     free(relay_list);
     free_array_of_strings(matchs, nb_relays);
@@ -21,17 +21,21 @@ int get_relay_count(bool only_owned) {
     return nb_relays;
 }
 
-void print_relays_list_formatted(bool only_owned) {
+void print_relays_list_formatted(bool only_owned, char *country_tag) {
     int nb_relays = 0;
     
     //get the list of mullvad relay servers and store them in an array
     char *relay_list = get_relays_info();
-    char **matchs = get_array_relays_list(relay_list, &nb_relays, only_owned);
+    char **matchs = get_array_relays_list(relay_list, &nb_relays, only_owned, country_tag);
 
-    printf("List of the %d available with your option", nb_relays);
+    printf("List of the %d available with your option(s)", nb_relays);
 
-    if (only_owned) {
+    if (only_owned && country_tag[0] != '\0') {
+        printf(" (only owned by Mullvad and corresponding to country tag \"%s\")\n\n", country_tag);
+    } else if (only_owned) {
         printf(" (only owned by Mullvad)\n\n");
+    } else if (country_tag[0] != '\0') {
+        printf(" (corresponding to country tag \"%s\")\n\n", country_tag);
     } else {
         printf("\n\n");
     }
@@ -73,12 +77,12 @@ bool connect_relay(char *relay_name, int delay) {
     return true;
 }
 
-void connect_random_relay(int delay, bool only_owned) {
+void connect_random_relay(int delay, bool only_owned, char *country_tag) {
     int nb_relays = 0;
 
     //get the list of mullvad relay servers and store them in an array
     char *relay_list = get_relays_info();
-    char **matchs = get_array_relays_list(relay_list, &nb_relays, only_owned);
+    char **matchs = get_array_relays_list(relay_list, &nb_relays, only_owned, country_tag);
 
     if (nb_relays == 0 || matchs == NULL) {
         printf("Error getting relays list\n");
@@ -95,8 +99,12 @@ void connect_random_relay(int delay, bool only_owned) {
         int random_number = (rand() % (nb_relays));
         printf("--------------------\nRandom relay picked: " COLOR_BOLD COLOR_GREEN "%s" COLOR_OFF, matchs[random_number]);
 
-        if (only_owned) {
+        if (only_owned && country_tag[0] != '\0') {
+            printf(" (owned by Mullvad and corresponding to country tag \"%s\")\n--------------------\n", country_tag);
+        } else if (only_owned) {
             printf(" (owned by Mullvad)\n--------------------\n");
+        } else if (country_tag[0] != '\0') {
+            printf(" (corresponding to country tag \"%s\")\n--------------------\n", country_tag);
         } else {
             printf("\n--------------------\n");
         }
