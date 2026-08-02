@@ -4,6 +4,7 @@
 #include <string.h>
 
 #include "../platform/platform.h"
+#include "../utils/utils.h"
 
 char *get_relays_info() {
     //create buffer of 1024 bytes
@@ -150,4 +151,60 @@ void free_array_of_strings(char **array, int nb_elements) {
 
     //free the array
     free(array);
+}
+
+char **parse_relay_names(char *input, int *nb_relays) {
+    int capacity = 32;
+    int size = 0;
+
+    char **relay_names = malloc(capacity * sizeof(char*));
+
+    char *token = strtok(input, ",");
+
+    while (token != NULL) {
+        regex_t re;
+        regmatch_t match[1];
+        const char *pattern = "[a-z]+-[a-z]+-wg-[0-9]+";
+
+        //compile regex
+        if (regcomp(&re, pattern, REG_EXTENDED)) {
+            perror("Regex compile failed");
+            return NULL;
+        }
+        
+        //if the relay name doesnt match with the pattern
+        if (regexec(&re, token, 1, match, 0) != 0) {
+            printf(COLOR_RED "Error: invalid format for relay names\n" COLOR_OFF);
+            return NULL;
+        }
+
+        if (size == capacity - 1) {
+            capacity *= 2;
+            char **temp = realloc(relay_names, capacity * sizeof(char*));
+            
+            if (temp == NULL) {
+                relay_names[size] = '\0';
+                break;
+            }
+
+            relay_names = temp;
+        }
+
+        int name_len = strlen(token);
+
+        char *result_i = malloc(name_len + 1);
+
+        strncpy(result_i, token, name_len);
+
+        result_i[name_len] = '\0';
+
+        relay_names[size] = result_i;
+
+        token = strtok(NULL, ",");
+        size++;
+    }
+
+    *nb_relays = size;
+
+    return relay_names;
 }

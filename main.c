@@ -6,7 +6,7 @@
 #include "cli/cli.h"
 #include "commands/commands.h"
 #include "utils/utils.h"
-#include "platform/platform.h"
+#include "relay_data/relay_data.h"
 
 int main(int argc, char **argv) {
     if (argc < 2) {
@@ -91,56 +91,14 @@ int main(int argc, char **argv) {
         
         //connect RELAY_NAME1,RELAY_NAME2,RELAY_NAME3...
         } else if (array_commands[2] != NULL) {
-            int capacity = 32;
-            int size = 0;
+            int nb_relays = 0;
+            char **relay_names = parse_relay_names(array_commands[2], &nb_relays);
 
-            char **relay_names = malloc(capacity * sizeof(char*));
-
-            char *token = strtok(array_commands[2], ",");
-
-            while (token != NULL) {
-                regex_t re;
-                regmatch_t match[1];
-                const char *pattern = "[a-z]+-[a-z]+-wg-[0-9]+";
-
-                //compile regex
-                if (regcomp(&re, pattern, REG_EXTENDED)) {
-                    perror("Regex compile failed");
-                    return EXIT_FAILURE;
-                }
-                
-                if (regexec(&re, token, 1, match, 0) != 0) {
-                    printf(COLOR_RED "Error: invalid format for relay names\n" COLOR_OFF);
-                    break;
-                }
-
-                if (size == capacity - 1) {
-                    capacity *= 2;
-                    char **temp = realloc(relay_names, capacity * sizeof(char*));
-                    
-                    if (temp == NULL) {
-                        relay_names[size] = '\0';
-                        break;
-                    }
-
-                    relay_names = temp;
-                }
-
-                int name_len = strlen(token);
-
-                char *result_i = malloc(name_len + 1);
-
-                strncpy(result_i, token, name_len);
-
-                result_i[name_len] = '\0';
-
-                relay_names[size] = result_i;
-
-                token = strtok(NULL, ",");
-                size++;
+            if (relay_names == NULL) {
+                return EXIT_FAILURE;
             }
 
-            connect_relay(120, relay_names, size);
+            connect_relay(120, relay_names, nb_relays);
 
         } else {
             printf("Usage: mullvad_rotator connect <SUBCOMMANDS> [OPTIONS]");
