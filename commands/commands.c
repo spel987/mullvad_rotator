@@ -1,6 +1,8 @@
 #include <stdbool.h>
 #include <stdio.h>
 #include <time.h>
+#include <stdlib.h>
+#include <string.h>
 
 #include "../relay_data/relay_data.h"
 #include "../utils/utils.h"

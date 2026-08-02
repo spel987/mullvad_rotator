@@ -36,6 +36,7 @@ jobs:
           install: >-
             mingw-w64-ucrt-x86_64-gcc
             mingw-w64-ucrt-x86_64-pcre2
+            make
 
       - name: Build
         shell: msys2 {0}
