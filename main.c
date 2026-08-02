@@ -98,7 +98,7 @@ int main(int argc, char **argv) {
                 return EXIT_FAILURE;
             }
 
-            connect_relay(120, relay_names, nb_relays);
+            connect_specific_relay(120, relay_names, nb_relays);
 
         //connect RELAY_NAME1,RELAY_NAME2,RELAY_NAME3 -t X
         } else if (array_commands[2] != NULL && strcmp(array_commands[3], "-t") == 0 && array_commands[4] != NULL) {
@@ -116,7 +116,7 @@ int main(int argc, char **argv) {
                     return EXIT_FAILURE;
                 }
 
-                connect_relay(atoi(array_commands[4]), relay_names, nb_relays);
+                connect_specific_relay(atoi(array_commands[4]), relay_names, nb_relays);
             }
         } else {
             printf("Usage: mullvad_rotator connect <SUBCOMMANDS> [OPTIONS]");

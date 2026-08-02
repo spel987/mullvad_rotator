@@ -45,6 +45,34 @@ void print_relays_list_formatted(bool only_owned) {
     free_array_of_strings(matchs, nb_relays);
 }
 
+bool connect_relay(char *relay_name, int delay) {
+    //format a command to pick the selected server
+    int cmd_len = strlen("mullvad relay set location ") + strlen(relay_name) + 6;
+    char *relay_set_cmd = malloc(cmd_len);
+    snprintf(relay_set_cmd, cmd_len, "mullvad relay set location %s 2>&1", relay_name);
+
+    char output[256];
+    FILE *cmd = popen(relay_set_cmd, "r");
+
+    fgets(output, sizeof(output), cmd);
+    pclose(cmd);
+
+    if (strstr(output, "Relay constraints updated") != NULL) {
+        //connect to mullvad
+        printf(COLOR_GREEN "Relay server change completed successfully\n" COLOR_OFF);
+        system("mullvad connect");
+        printf("Switching relay in " COLOR_BOLD "%d secondes..." COLOR_OFF "\n--------------------\n\n", delay);
+        
+    } else {
+        printf(COLOR_RED "Error: invalid relay server name" COLOR_OFF "\n--------------------");
+        free(relay_set_cmd);
+        return false;
+    }
+
+    free(relay_set_cmd);
+    return true;
+}
+
 void connect_random_relay(int delay, bool only_owned) {
     int nb_relays = 0;
 
@@ -73,19 +101,9 @@ void connect_random_relay(int delay, bool only_owned) {
             printf("\n--------------------\n");
         }
 
-        //format a command to pick the selected server
-        int cmd_len = strlen("mullvad relay set location ") + strlen(matchs[random_number]) + 1;
-        char *relay_set_cmd = malloc(cmd_len);
-        snprintf(relay_set_cmd, cmd_len, "mullvad relay set location %s", matchs[random_number]);
-
-        system(relay_set_cmd);
-
-        free(relay_set_cmd);
-
-        //connect to mullvad
-        system("mullvad connect");
-
-        printf("Switching relay in " COLOR_BOLD "%d secondes..." COLOR_OFF "\n--------------------\n\n", delay);
+        if (!connect_relay(matchs[random_number], delay)) {
+            break;
+        }
 
         SLEEP_SECONDS(delay);
     } while (is_running);
@@ -95,7 +113,7 @@ void connect_random_relay(int delay, bool only_owned) {
     free_array_of_strings(matchs, nb_relays);
 }
 
-void connect_relay(int delay, char **relay_names, int nb_relays) {
+void connect_specific_relay(int delay, char **relay_names, int nb_relays) {
     bool is_running = true;
 
     do {
@@ -104,19 +122,9 @@ void connect_relay(int delay, char **relay_names, int nb_relays) {
         int random_number = (rand() % (nb_relays));
         printf("--------------------\nRandom relay picked: " COLOR_BOLD COLOR_GREEN "%s" COLOR_OFF "\n--------------------\n", relay_names[random_number]);
 
-        //format a command to pick the selected server
-        int cmd_len = strlen("mullvad relay set location ") + strlen(relay_names[random_number]) + 1;
-        char *relay_set_cmd = malloc(cmd_len);
-        snprintf(relay_set_cmd, cmd_len, "mullvad relay set location %s", relay_names[random_number]);
-
-        system(relay_set_cmd);
-
-        free(relay_set_cmd);
-
-        //connect to mullvad
-        system("mullvad connect");
-
-        printf("Switching relay in " COLOR_BOLD "%d secondes..." COLOR_OFF "\n--------------------\n\n", delay);
+        if (!connect_relay(relay_names[random_number], delay)) {
+            break;
+        }
 
         SLEEP_SECONDS(delay);
     } while (is_running);
