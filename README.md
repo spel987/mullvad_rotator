@@ -10,9 +10,10 @@ Commands:
   relay <COMMAND>        Count/list relays available for connection (<COMMAND>: count, list)
       count              Display the number of relays available for connection
       list               Display the list of all relays available for connection
-  connect <COMMAND>      Connect to a Mullvad relay server (<COMMAND>: random)
+  connect <random|NAMES> Connect to a Mullvad relay server
       random             Connect to a random relay server
-          -t <SECONDS>   Specify the number of seconds for the server rotation (default: 120 seconds)
+      <NAMES>            Connect to one or more specific relay servers (separated by commas, with no space, examples of valid relay names: nl-ams-wg-007,no-osl-wg-002,se-sto-wg-014)
+      -t <SECONDS>       Specify the number of seconds for the server rotation (default: 120 seconds)
 
 Options:
   --only-owned           Only use relays owned by Mullvad (excludes rented servers)
@@ -36,6 +37,10 @@ Options:
 ### Connect to a random relay owned by Mullvad and switch relays every 20 seconds (custom)
 ```
 ./mullvad_rotator connect random -t 20 --owned-only
+```
+### Connect to 3 specific relays and switch relays every 40 seconds (custom)
+```
+./mullvad_rotator connect fr-par-wg-101,se-mma-wg-011,jp-tyo-wg-202 -t 20
 ```
 
 ## Note

@@ -175,6 +175,11 @@ char **parse_relay_names(char *input, int *nb_relays) {
         //if the relay name doesnt match with the pattern
         if (regexec(&re, token, 1, match, 0) != 0) {
             printf(COLOR_RED "Error: invalid format for relay names\n" COLOR_OFF);
+            printf("\nExamples of valid relay names: " COLOR_BOLD "nl-ams-wg-007,no-osl-wg-002,se-sto-wg-014" COLOR_OFF);
+            printf("\n\nUsage: mullvad_rotator connect <NAMES> [OPTIONS]");
+            printf("\n\nSubcommands:");
+            printf("\n%2s%-30s%s", "", COLOR_BOLD "-t" COLOR_OFF " <SECONDS>", "Specify the number of seconds for the server rotation (default: 120 seconds)");
+
             return NULL;
         }
 

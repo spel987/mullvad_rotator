@@ -89,8 +89,8 @@ int main(int argc, char **argv) {
                 connect_random_relay(atoi(array_commands[4]), only_owned);
             }
         
-        //connect RELAY_NAME1,RELAY_NAME2,RELAY_NAME3...
-        } else if (array_commands[2] != NULL) {
+        //connect RELAY_NAME1,RELAY_NAME2,RELAY_NAME3
+        } else if (array_commands[2] != NULL && array_commands[3] == NULL) {
             int nb_relays = 0;
             char **relay_names = parse_relay_names(array_commands[2], &nb_relays);
 
@@ -100,11 +100,30 @@ int main(int argc, char **argv) {
 
             connect_relay(120, relay_names, nb_relays);
 
+        //connect RELAY_NAME1,RELAY_NAME2,RELAY_NAME3 -t X
+        } else if (array_commands[2] != NULL && strcmp(array_commands[3], "-t") == 0 && array_commands[4] != NULL) {
+            if (!digit_check(array_commands[4])) {
+                printf(COLOR_RED "Error: not a valid number\n\n" COLOR_OFF);
+                printf("Usage: mullvad_rotator connect <NAMES> [OPTIONS]");
+                printf("\n\nSubcommands:");
+                printf("\n%2s%-30s%s", "", COLOR_BOLD "-t" COLOR_OFF " <SECONDS>", "Specify the number of seconds for the server rotation (default: 120 seconds)");
+                return EXIT_FAILURE;
+            } else {
+                int nb_relays = 0;
+                char **relay_names = parse_relay_names(array_commands[2], &nb_relays);
+
+                if (relay_names == NULL) {
+                    return EXIT_FAILURE;
+                }
+
+                connect_relay(atoi(array_commands[4]), relay_names, nb_relays);
+            }
         } else {
             printf("Usage: mullvad_rotator connect <SUBCOMMANDS> [OPTIONS]");
             printf("\n\nSubcommands:");
             printf("\n%2s%-30s%s", "", COLOR_BOLD "random" COLOR_OFF, "Connect to a random relay server");
-            printf("\n%6s%-26s%s", "", COLOR_BOLD "-t" COLOR_OFF " <SECONDS>", "Specify the number of seconds for the server rotation (default: 120 seconds)");
+            printf("\n%2s%-30s%s", "", COLOR_BOLD "<NAMES>" COLOR_OFF, "Connect to one or more specific relay servers (separated by commas, with no space, examples of valid relay names: nl-ams-wg-007,no-osl-wg-002,se-sto-wg-014)");
+            printf("\n%2s%-30s%s", "", COLOR_BOLD "-t" COLOR_OFF " <SECONDS>", "Specify the number of seconds for the server rotation (default: 120 seconds)");
             printf("\n\nOptions:");
             printf("\n%2s%-30s%s", "", COLOR_BOLD "--only-owned" COLOR_OFF, "Only use relays owned by Mullvad (excludes rented servers)");
             return EXIT_FAILURE;
