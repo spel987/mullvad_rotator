@@ -22,6 +22,8 @@ Options:
 - Have Mullvad installed
 - Be logged in to a Mullvad account
 
+**Warning**: There isn't really any error handling right now if Mullvad isn't installed. So make sure you have it on your machine if you want this to work. As I mention below, the script will be improved in the future.
+
 ## Examples of commands
 ### Connect to a random relay and switch relays every 120 seconds (default)
 ```
@@ -31,14 +33,14 @@ Options:
 ```
 ./mullvad_rotator connect random -t 30
 ```
-### Connect to a random relay owned by Mullvad and switch relays every 10 seconds (custom)
+### Connect to a random relay owned by Mullvad and switch relays every 20 seconds (custom)
 ```
-./mullvad_rotator connect random -t 30 --owned-only
+./mullvad_rotator connect random -t 20 --owned-only
 ```
 
 ## Note
 
-This is the first C project I've worked on. It's more of a practice exercise than a real project.
+This is the first C project I've worked on. Think of it as an exercise, but if it's useful to you, I'll be happy.
 I plan to improve it in the future.
 
 <img width=100 src="https://i.imgur.com/O1I2BYJ.png">
