@@ -1,0 +1,96 @@
+name: build
+
+on:
+  push:
+    tags:
+      - 'v*'
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: "Release tag to build"
+        required: true
+
+permissions:
+  contents: write
+
+jobs:
+  prepare:
+    runs-on: ubuntu-latest
+    outputs:
+      tag: ${{ steps.vars.outputs.tag }}
+    steps:
+      - name: Set release tag
+        id: vars
+        run: echo "tag=${{ github.event.inputs.tag || github.ref_name }}" >> "$GITHUB_OUTPUT"
+
+  build-windows:
+    needs: prepare
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: msys2/setup-msys2@v2
+        with:
+          msystem: UCRT64
+          update: true
+          install: >-
+            mingw-w64-ucrt-x86_64-gcc
+            mingw-w64-ucrt-x86_64-pcre2
+
+      - name: Build
+        shell: msys2 {0}
+        run: make
+
+      - name: Rename binary
+        shell: msys2 {0}
+        run: mv mullvad_rotator.exe mullvad_rotator-${{ needs.prepare.outputs.tag }}-windows.exe
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: windows-binary
+          path: mullvad_rotator-${{ needs.prepare.outputs.tag }}-windows.exe
+
+  build-unix:
+    needs: prepare
+    strategy:
+      matrix:
+        os: [ubuntu-latest, macos-latest]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Build
+        run: make
+
+      - name: Rename binary (Linux)
+        if: matrix.os == 'ubuntu-latest'
+        run: mv mullvad_rotator mullvad_rotator-${{ needs.prepare.outputs.tag }}-linux
+
+      - name: Rename binary (macOS)
+        if: matrix.os == 'macos-latest'
+        run: mv mullvad_rotator mullvad_rotator-${{ needs.prepare.outputs.tag }}-macos
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ matrix.os }}-binary
+          path: mullvad_rotator-${{ needs.prepare.outputs.tag }}-${{ matrix.os == 'ubuntu-latest' && 'linux' || 'macos' }}
+
+  release:
+    needs: [prepare, build-windows, build-unix]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          path: binaries
+
+      - name: Upload to release
+        uses: softprops/action-gh-release@v2
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          tag_name: ${{ needs.prepare.outputs.tag }}
+          files: binaries/**/*
+          name: 'mullvad_rotator ${{ needs.prepare.outputs.tag }}'
+          body: 'Download the binary for your platform from the assets below.'
