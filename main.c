@@ -6,6 +6,7 @@
 #include "cli/cli.h"
 #include "commands/commands.h"
 #include "utils/utils.h"
+#include "platform/platform.h"
 
 int main(int argc, char **argv) {
     if (argc < 2) {
@@ -98,6 +99,21 @@ int main(int argc, char **argv) {
             char *token = strtok(array_commands[2], ",");
 
             while (token != NULL) {
+                regex_t re;
+                regmatch_t match[1];
+                const char *pattern = "[a-z]+-[a-z]+-wg-[0-9]+";
+
+                //compile regex
+                if (regcomp(&re, pattern, REG_EXTENDED)) {
+                    perror("Regex compile failed");
+                    return EXIT_FAILURE;
+                }
+                
+                if (regexec(&re, token, 1, match, 0) != 0) {
+                    printf(COLOR_RED "Error: invalid format for relay names\n" COLOR_OFF);
+                    break;
+                }
+
                 if (size == capacity - 1) {
                     capacity *= 2;
                     char **temp = realloc(relay_names, capacity * sizeof(char*));
@@ -123,7 +139,7 @@ int main(int argc, char **argv) {
                 token = strtok(NULL, ",");
                 size++;
             }
-            
+
             connect_relay(120, relay_names, size);
 
         } else {
