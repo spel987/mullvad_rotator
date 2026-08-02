@@ -95,3 +95,4 @@ jobs:
           files: binaries/**/*
           name: 'mullvad_rotator ${{ needs.prepare.outputs.tag }}'
           body: 'Download the binary for your platform from the assets below.'
+          draft: true
