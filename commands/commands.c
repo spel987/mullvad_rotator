@@ -54,6 +54,9 @@ void connect_random_relay(int delay, bool only_owned) {
 
     if (nb_relays == 0 || matchs == NULL) {
         printf("Error getting relays list\n");
+        free(relay_list);
+        free_array_of_strings(matchs, nb_relays);
+        return;
     }
 
     bool is_running = true;

@@ -25,7 +25,7 @@ char *get_relays_info() {
     }
 
     //get the content of the command's output
-    while (1) {
+    while (true) {
         //if there is no more space in our buffer, we have to make it bigger
         if (size == capacity - 1) {
             capacity *= 2;
@@ -98,8 +98,11 @@ char **get_array_relays_list(char *relay_list, int *nb_relays, bool only_owned) 
         //if we are in the "only owned" mode, we skip the rented ones
         if (only_owned && strcmp(type, "Mullvad-owned") != 0) {
             cursor += match[0].rm_eo;
+            free(type);
             continue;
         }
+
+        free(type);
 
         //if there is no more space in our array of strings containing the results, we have to make it bigger
         if (size == capacity - 1) {

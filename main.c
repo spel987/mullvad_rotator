@@ -23,9 +23,9 @@ int main(int argc, char **argv) {
     }
 
     if (only_owned) {
-        array_commands = malloc((argc - 1) * sizeof(char*));
-    } else {
         array_commands = malloc((argc) * sizeof(char*));
+    } else {
+        array_commands = malloc((argc + 1) * sizeof(char*));
     }
 
     int nb_commands = 0;
