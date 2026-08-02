@@ -40,13 +40,18 @@ int main(int argc, char **argv) {
 
     array_commands[nb_commands] = NULL;
 
+    //help
     if (strcmp(array_commands[1], "help") == 0) {
         print_default_usage();
         return 0;
+
+    //relay
     } else if (strcmp(array_commands[1], "relay") == 0) {
+        //relay count
         if (array_commands[2] != NULL && strcmp(array_commands[2], "count") == 0) {
             printf("There are currently %d relays available for connection!\n", get_relay_count(only_owned));
             return 0;
+        //relay list
         } else if (array_commands[2] != NULL && strcmp(array_commands[2], "list") == 0) {
             print_relays_list_formatted(only_owned);
             return 0;
@@ -60,11 +65,14 @@ int main(int argc, char **argv) {
             return EXIT_FAILURE;
         }
 
+    //connect
     } else if (strcmp(array_commands[1], "connect") == 0) {
+        //connect random
         //connect to a random relay with default rotation time
         if (array_commands[2] != NULL && strcmp(array_commands[2], "random") == 0 && array_commands[3] == NULL) {
             connect_random_relay(120, only_owned);
         
+        //connect random -t X
         //connect to a random relay with a custom rotation time
         } else if (array_commands[2] != NULL && strcmp(array_commands[2], "random") == 0 && strcmp(array_commands[3], "-t") == 0 && array_commands[4] != NULL) {
             if (!digit_check(array_commands[4])) {
@@ -80,6 +88,44 @@ int main(int argc, char **argv) {
                 connect_random_relay(atoi(array_commands[4]), only_owned);
             }
         
+        //connect RELAY_NAME1,RELAY_NAME2,RELAY_NAME3...
+        } else if (array_commands[2] != NULL) {
+            int capacity = 32;
+            int size = 0;
+
+            char **relay_names = malloc(capacity * sizeof(char*));
+
+            char *token = strtok(array_commands[2], ",");
+
+            while (token != NULL) {
+                if (size == capacity - 1) {
+                    capacity *= 2;
+                    char **temp = realloc(relay_names, capacity * sizeof(char*));
+                    
+                    if (temp == NULL) {
+                        relay_names[size] = '\0';
+                        break;
+                    }
+
+                    relay_names = temp;
+                }
+
+                int name_len = strlen(token);
+
+                char *result_i = malloc(name_len + 1);
+
+                strncpy(result_i, token, name_len);
+
+                result_i[name_len] = '\0';
+
+                relay_names[size] = result_i;
+
+                token = strtok(NULL, ",");
+                size++;
+            }
+            
+            connect_relay(120, relay_names, size);
+
         } else {
             printf("Usage: mullvad_rotator connect <SUBCOMMANDS> [OPTIONS]");
             printf("\n\nSubcommands:");
