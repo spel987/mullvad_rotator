@@ -19,7 +19,8 @@ int main(int argc, char **argv) {
     bool only_owned = false;
     //string for the country tag (if specified, null by default)
     char *country_tag = calloc(3, sizeof(char));
-    //arrays of the parameters with options such as "--only-owned" and "--only-<COUNTRY-TAG>" removed
+    //boolean for the option "--multihop"
+    bool multihop_enabled = false;
 
     regex_t re;
     regmatch_t match_country_tag[2];
@@ -27,6 +28,7 @@ int main(int argc, char **argv) {
     const char *pattern_country_tag = "--only-([a-z]{2})";
     regcomp(&re, pattern_country_tag, REG_EXTENDED);
 
+    //arrays of the parameters with options such as "--only-owned" and "--only-<COUNTRY-TAG>" removed
     char **array_commands = malloc(argc * sizeof(char*));
 
     int nb_commands = 0;
@@ -37,6 +39,8 @@ int main(int argc, char **argv) {
         } else if (regexec(&re, argv[i], 2, match_country_tag, 0) == 0) {
             strncpy(country_tag, argv[i] + match_country_tag[1].rm_so, 2);
             country_tag[2] = '\0';
+        } else if (strcmp(argv[i], "--multihop") == 0) {
+            multihop_enabled = true;
         } else {
             char *element_i = argv[i];
             array_commands[nb_commands] = element_i;
@@ -75,7 +79,7 @@ int main(int argc, char **argv) {
         //connect random
         //connect to a random relay with default rotation time
         if (array_commands[2] != NULL && strcmp(array_commands[2], "random") == 0 && array_commands[3] == NULL) {
-            connect_random_relay(120, only_owned, country_tag);
+            connect_random_relay(120, only_owned, country_tag, multihop_enabled);
         
         //connect random -t X
         //connect to a random relay with a custom rotation time
@@ -89,7 +93,7 @@ int main(int argc, char **argv) {
                 print_options();
                 return EXIT_FAILURE;
             } else {
-                connect_random_relay(atoi(array_commands[4]), only_owned, country_tag);
+                connect_random_relay(atoi(array_commands[4]), only_owned, country_tag, multihop_enabled);
             }
         
         //connect RELAY_NAME1,RELAY_NAME2,RELAY_NAME3
@@ -101,7 +105,7 @@ int main(int argc, char **argv) {
                 return EXIT_FAILURE;
             }
 
-            connect_specific_relay(120, relay_names, nb_relays);
+            connect_specific_relay(120, relay_names, nb_relays, multihop_enabled);
 
         //connect RELAY_NAME1,RELAY_NAME2,RELAY_NAME3 -t X
         } else if (array_commands[2] != NULL && strcmp(array_commands[3], "-t") == 0 && array_commands[4] != NULL) {
@@ -119,7 +123,7 @@ int main(int argc, char **argv) {
                     return EXIT_FAILURE;
                 }
 
-                connect_specific_relay(atoi(array_commands[4]), relay_names, nb_relays);
+                connect_specific_relay(atoi(array_commands[4]), relay_names, nb_relays, multihop_enabled);
             }
 
         } else {

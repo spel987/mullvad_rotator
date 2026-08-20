@@ -6,6 +6,7 @@ void print_options() {
     printf("\n\nOptions:");
     printf("\n%2s%-30s%s", "", COLOR_BOLD "--only-owned" COLOR_OFF, "Only use relays owned by Mullvad (excludes rented servers)");
     printf("\n%2s%-30s%s", "", COLOR_BOLD "--only-<COUNTRY-TAG>" COLOR_OFF, "Only use relays from a specific country (<COUNTRY-TAG>: the first 2 letters of each relay server name, examples: fr,no,se...)");
+    printf("\n%2s%-30s%s", "", COLOR_BOLD "--multihop" COLOR_OFF, "Enabling multihop (routing traffic through an entry relay and then an exit relay) works the same way, the two relays are chosen at random.");
 }
 
 void print_default_usage() {

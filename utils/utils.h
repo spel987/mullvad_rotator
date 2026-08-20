@@ -9,5 +9,6 @@
 #include <stdbool.h>
 
 bool digit_check(char *key);
+bool apply_mullvad_relay(char *cmd_format, char *relay_name);
 
 #endif
