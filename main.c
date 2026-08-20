@@ -2,6 +2,8 @@
 #include <stdlib.h>
 #include <string.h>
 #include <stdbool.h>
+#include <signal.h>
+#include <stdlib.h>
 
 #include "cli/cli.h"
 #include "commands/commands.h"
@@ -10,6 +12,9 @@
 #include "platform/platform.h"
 
 int main(int argc, char **argv) {
+    signal(SIGINT, cleanup_and_exit);
+    signal(SIGTERM, cleanup_and_exit);
+
     if (argc < 2) {
         print_default_usage();
         return EXIT_FAILURE;
