@@ -144,7 +144,7 @@ void connect_random_relay(int delay, bool only_owned, char *country_tag, bool mu
         } else {
             //get a random relay server
             int random_number = (rand() % (nb_relays));
-            printf("--------------------\nRandom entry relay picked: " COLOR_BOLD COLOR_GREEN "%s" COLOR_OFF "%s\n--------------------\n", matchs[random_number], suffix);
+            printf("--------------------\nRandom relay picked: " COLOR_BOLD COLOR_GREEN "%s" COLOR_OFF "%s\n--------------------\n", matchs[random_number], suffix);
 
             if (!connect_relay(matchs[random_number], delay)) {
                 break;
@@ -188,7 +188,7 @@ void connect_specific_relay(int delay, char **relay_names, int nb_relays, bool m
         } else {
             //get a random relay server
             int random_number = (rand() % (nb_relays));
-            printf("--------------------\nRandom entry relay picked: " COLOR_BOLD COLOR_GREEN "%s" COLOR_OFF "\n--------------------\n", relay_names[random_number]);
+            printf("--------------------\nRandom relay picked: " COLOR_BOLD COLOR_GREEN "%s" COLOR_OFF "\n--------------------\n", relay_names[random_number]);
 
             if (!connect_relay(relay_names[random_number], delay)) {
                 break;
