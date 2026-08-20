@@ -12,6 +12,16 @@
 #include "platform/platform.h"
 
 int main(int argc, char **argv) {
+    if (!check_mullvad_availability()) {
+        printf(COLOR_RED "Error: Mullvad was not found on your computer. Please install it first.\n" COLOR_OFF);
+        return EXIT_FAILURE;
+    }
+
+    if (!check_mullvad_account()) {
+        printf(COLOR_RED "Error: No account associated with Mullvad was detected. Please log in first.\n" COLOR_OFF);
+        return EXIT_FAILURE;
+    }
+    
     signal(SIGINT, cleanup_and_exit);
     signal(SIGTERM, cleanup_and_exit);
 

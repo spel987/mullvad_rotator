@@ -11,5 +11,7 @@
 bool digit_check(char *key);
 bool apply_mullvad_relay(char *cmd_format, char *relay_name);
 void cleanup_and_exit(int sig);
+bool check_mullvad_availability();
+bool check_mullvad_account();
 
 #endif

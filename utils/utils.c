@@ -37,3 +37,61 @@ void cleanup_and_exit(int sig) {
     
     exit(0);
 }
+
+bool check_mullvad_availability() {
+    int capacity = 1024;
+
+    char *buffer = malloc(capacity * sizeof(char));
+
+    if (buffer == NULL) {
+        return false;
+    }
+
+    FILE *cmd = popen("mullvad version 2>&1", "r");
+
+    if (cmd == NULL) {
+        free(buffer);
+        return false;
+    }
+
+    while (fgets(buffer, capacity, cmd) != NULL) {
+        // drain remaining output
+    }
+
+    free(buffer);
+    int value_pclose = pclose(cmd);
+
+    return value_pclose == 0;
+}
+
+bool check_mullvad_account() {
+    int capacity = 1024;
+
+    char *buffer = malloc(capacity * sizeof(char));
+
+    if (buffer == NULL) {
+        return false;
+    }
+
+    FILE *cmd = popen("mullvad account get 2>&1", "r");
+
+    if (cmd == NULL) {
+        free(buffer);
+        return false;
+    }
+
+    char *first_line = fgets(buffer, capacity, cmd);
+
+    if (first_line == NULL) return false;
+    
+    bool account_connected = strstr(buffer, "Not logged in on any account") == NULL;
+
+    while (fgets(buffer, capacity, cmd) != NULL) {
+        // drain remaining output
+    }
+
+    free(buffer);
+    pclose(cmd);
+
+    return account_connected;
+}

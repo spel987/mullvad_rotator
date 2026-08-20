@@ -27,9 +27,6 @@
 - [Mullvad VPN](https://mullvad.net/download/vpn) installed on your system
 - An active Mullvad account (logged in)
 
-> [!WARNING]
-> There isn't really any error handling right now if Mullvad isn't installed. Make sure the Mullvad CLI is available on your machine before running this tool.
-
 ## Installation
 
 ### Download a prebuilt binary
