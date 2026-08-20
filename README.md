@@ -22,6 +22,12 @@
 - Filter only servers located in a specific country
 - Option to use multihop
 
+### Demonstration
+
+A brief demonstration connecting to random relays and then to random relays located exclusively in Sweden:
+
+<img src="assets/demo.gif" width="800">
+
 ## Prerequisites
 
 - [Mullvad VPN](https://mullvad.net/download/vpn) installed on your system
