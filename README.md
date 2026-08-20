@@ -5,6 +5,7 @@
 - Connect to predefined Mullvad relay servers and switch every X seconds
 - Filter only servers owned by Mullvad
 - Filter only servers located in a specific country
+- Option to use multihop
 
 ```
 Usage: mullvad_rotator <COMMAND> [SUBCOMMAND] [OPTIONS]
@@ -22,6 +23,7 @@ Commands:
 Options:
   --only-owned           Only use relays owned by Mullvad (excludes rented servers)
   --only-<COUNTRY-TAG>   Only use relays from a specific country (<COUNTRY-TAG>: the first 2 letters of each relay server name, examples: fr,no,se...)
+  --multihop             Enabling multihop (routing traffic through an entry relay and then an exit relay) works the same way, the two relays are chosen at random.
 ```
 
 ## Prerequisites
@@ -50,6 +52,10 @@ Options:
 ### Connect to a random relay located in Sweden owned by Mullvad and switch relays every 5 seconds (custom)
 ```
 ./mullvad_rotator connect random -t 5 --only-owned --only-se
+```
+### Connect to a random relay owned by Mullvad with multihop and switch relays every 100 seconds (custom)
+```
+./mullvad_rotator connect random -t 100 --owned-only --multihop
 ```
 
 ## Note
