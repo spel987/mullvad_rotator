@@ -61,15 +61,15 @@ char *get_relays_info() {
     return buffer;
 }
 
-char **get_array_relays_list(char *relay_list, int *nb_relays, bool only_owned, char *country_tag) {   
+char **get_array_relays_list(char *relay_list, int *nb_relays, bool only_owned, char *country_tag, char *city_tag) {   
     regex_t re;
-    regmatch_t match[4];
+    regmatch_t match[5];
 
     char* cursor = relay_list;
     int nb_result = 0;
 
     //pattern detection of Mullvad relay server names
-    const char *pattern = "(([a-z]+)-[a-z]+-wg-[0-9]+) \\([0-9.]+, [a-z0-9:]+\\) - hosted by [a-zA-Z0-9]+ \\(([a-zA-Z0-9-]+)\\)";
+    const char *pattern = "(([a-z]+)-([a-z]+)-wg-[0-9]+) \\([0-9.]+, [a-z0-9:]+\\) - hosted by [a-zA-Z0-9]+ \\(([a-zA-Z0-9-]+)\\)";
 
     //create an array that will contains strings
     int capacity = 1024;
@@ -87,12 +87,12 @@ char **get_array_relays_list(char *relay_list, int *nb_relays, bool only_owned, 
     }
 
     //execute regex
-    while(regexec(&re, cursor, 4, match, 0) == 0 && nb_result < 1000) {
+    while(regexec(&re, cursor, 5, match, 0) == 0 && nb_result < 1000) {
         //create a new buffer for the type (rented/owned) of the relay
-        int type_len = match[3].rm_eo - match[3].rm_so;
+        int type_len = match[4].rm_eo - match[4].rm_so;
         char *type = malloc(type_len + 1);
     
-        strncpy(type, cursor + match[3].rm_so, type_len);
+        strncpy(type, cursor + match[4].rm_so, type_len);
 
         type[type_len] = '\0';
 
@@ -107,6 +107,12 @@ char **get_array_relays_list(char *relay_list, int *nb_relays, bool only_owned, 
 
         //if a country tag is specified, tags that do not apply to that country are ignored
         if (country_tag[0] != '\0' && strncmp(cursor + match[2].rm_so, country_tag, 2)) {
+            cursor += match[0].rm_eo;
+            continue;
+        }
+
+        //if a city tag is specified, tags that do not apply to that city are ignored
+        if (city_tag[0] != '\0' && strncmp(cursor + match[3].rm_so, city_tag, 3)) {
             cursor += match[0].rm_eo;
             continue;
         }

@@ -62,28 +62,22 @@ make
 Usage: mullvad_rotator <COMMAND> [SUBCOMMAND] [OPTIONS]
 
 Commands:
-  help                   Display this helper
-  relay <COMMAND>        Count/list relays available for connection (<COMMAND>: count, list)
-      count              Display the number of relays available for connection
-      list               Display the list of all relays available for connection
-  connect <random|NAMES> Connect to a Mullvad relay server
-      random             Connect to a random relay server
-      <NAMES>            Connect to one or more specific relay servers (separated by commas, with no space, examples of valid relay names: nl-ams-wg-007,no-osl-wg-002,se-sto-wg-014...)
-      -t <SECONDS>       Specify the number of seconds for the server rotation (default: 120 seconds)
+  help                       Display this helper
+  relay <COMMAND>            Count/list relays available for connection (<COMMAND>: count, list)
+      count                  Display the number of relays available for connection
+      list                   Display the list of all relays available for connection
+  connect <random|NAMES>     Connect to a Mullvad relay server
+      random                 Connect to a random relay server
+      <NAMES>                Connect to one or more specific relay servers (separated by commas, with no space, examples of valid relay names: nl-ams-wg-007,no-osl-wg-002,se-sto-wg-014...)
+      -t <SECONDS>           Specify the number of seconds for the server rotation (default: 120 seconds)
 
 Options:
-  --only-owned           Only use relays owned by Mullvad (excludes rented servers)
-  --only-<COUNTRY-TAG>   Only use relays from a specific country (<COUNTRY-TAG>: the first 2 letters of each relay server name, examples: fr,no,se...)
-  --multihop             Enabling multihop (routing traffic through an entry relay and then an exit relay) works the same way, the two relays are chosen at random.
+  --only-owned               Only use relays owned by Mullvad (excludes rented servers)
+  --only-<COUNTRY>[-<CITY>]  Only use relays from a specific country (<COUNTRY>: the first two letters of each relay server's name, for example: fr, no, se...) and OPTIONALLY from a specific city within that country (<CITY>: the three letters identifying the city: par, sto, hel...)
+  --multihop                 Enabling multihop (routing traffic through an entry relay and then an exit relay) works the same way, the two relays are chosen at random.
 ```
 
 ## Examples
-
-### Connect to a random relay (default 120s rotation)
-
-```bash
-./mullvad_rotator connect random
-```
 
 ### Connect to a random relay, rotate every 30 seconds
 
@@ -91,22 +85,22 @@ Options:
 ./mullvad_rotator connect random -t 30
 ```
 
-### Only Mullvad-owned relays, rotate every 20 seconds
+### Only Mullvad-owned Swedish relays, rotate every 20 seconds
 
 ```bash
-./mullvad_rotator connect random -t 20 --only-owned
+./mullvad_rotator connect random -t 20 --only-owned --only-se
+```
+
+### Only relays in Paris, rotate every 10 seconds
+
+```bash
+./mullvad_rotator connect random -t 10 --only-fr-par
 ```
 
 ### Cycle through 3 specific relays every 40 seconds
 
 ```bash
 ./mullvad_rotator connect fr-par-wg-101,se-mma-wg-011,jp-tyo-wg-202 -t 40
-```
-
-### Swedish + Mullvad-owned relays, rotate every 5 seconds
-
-```bash
-./mullvad_rotator connect random -t 5 --only-owned --only-se
 ```
 
 ### Mullvad-owned relays with multihop, rotate every 100 seconds

@@ -8,12 +8,12 @@
 #include "../utils/utils.h"
 #include "../platform/platform.h"
 
-int get_relay_count(bool only_owned, char *country_tag) {
+int get_relay_count(bool only_owned, char *country_tag, char *city_tag) {
     int nb_relays = 0;
 
     //get the list of mullvad relay servers and store them in an array
     char *relay_list = get_relays_info();
-    char **matchs = get_array_relays_list(relay_list, &nb_relays, only_owned, country_tag);
+    char **matchs = get_array_relays_list(relay_list, &nb_relays, only_owned, country_tag, city_tag);
 
     free(relay_list);
     free_array_of_strings(matchs, nb_relays);
@@ -21,23 +21,30 @@ int get_relay_count(bool only_owned, char *country_tag) {
     return nb_relays;
 }
 
-void print_relays_list_formatted(bool only_owned, char *country_tag) {
+void print_relays_list_formatted(bool only_owned, char *country_tag, char *city_tag) {
     int nb_relays = 0;
     
     //get the list of mullvad relay servers and store them in an array
     char *relay_list = get_relays_info();
-    char **matchs = get_array_relays_list(relay_list, &nb_relays, only_owned, country_tag);
+    char **matchs = get_array_relays_list(relay_list, &nb_relays, only_owned, country_tag, city_tag);
 
-    printf("List of the %d available with your option(s)", nb_relays);
+    if (nb_relays != 0) {
+        printf("List of the %d available with your option(s)", nb_relays);
 
-    if (only_owned && country_tag[0] != '\0') {
-        printf(" (only owned by Mullvad and corresponding to country tag \"%s\")\n\n", country_tag);
-    } else if (only_owned) {
-        printf(" (only owned by Mullvad)\n\n");
-    } else if (country_tag[0] != '\0') {
-        printf(" (corresponding to country tag \"%s\")\n\n", country_tag);
+        if (only_owned && country_tag[0] != '\0' && city_tag[0] != '\0') {
+            printf(" (only owned by Mullvad and corresponding to country tag \"%s\" and city tag \"%s\")\n\n", country_tag, city_tag);
+        } else if (only_owned && country_tag[0] != '\0') {
+            printf(" (only owned by Mullvad and corresponding to country tag \"%s\")\n\n", country_tag);
+        } 
+        else if (only_owned) {
+            printf(" (only owned by Mullvad)\n\n");
+        } else if (country_tag[0] != '\0') {
+            printf(" (corresponding to country tag \"%s\")\n\n", country_tag);
+        } else {
+            printf("\n\n");
+        }
     } else {
-        printf("\n\n");
+        printf(COLOR_RED "Error: No relay matches your selection\n" COLOR_OFF);
     }
 
     //browse the array to display the name of each relay
@@ -98,22 +105,25 @@ bool connect_relay_multihop(char *relay_name_entry, char *relay_name_exit, int d
     return true;
 }
 
-void connect_random_relay(int delay, bool only_owned, char *country_tag, bool multihop_enabled) {
+void connect_random_relay(int delay, bool only_owned, char *country_tag, char *city_tag, bool multihop_enabled) {
     int nb_relays = 0;
 
     //get the list of mullvad relay servers and store them in an array
     char *relay_list = get_relays_info();
-    char **matchs = get_array_relays_list(relay_list, &nb_relays, only_owned, country_tag);
+    char **matchs = get_array_relays_list(relay_list, &nb_relays, only_owned, country_tag, city_tag);
 
     if (nb_relays == 0 || matchs == NULL) {
-        printf("Error getting relays list\n");
+        printf(COLOR_RED "Error: No relay matches your selection\n" COLOR_OFF);
         free(relay_list);
         free_array_of_strings(matchs, nb_relays);
         return;
     }
 
     char suffix[128] = {0};
-    if (only_owned && country_tag[0] != '\0') {
+
+    if (only_owned && country_tag[0] != '\0' && city_tag[0] != '\0') {
+        snprintf(suffix, sizeof(suffix), " (owned by Mullvad and corresponding to country tag \"%s\" and city tag \"%s\")", country_tag, city_tag);
+    } else if (only_owned && country_tag[0] != '\0') {
         snprintf(suffix, sizeof(suffix), " (owned by Mullvad and corresponding to country tag \"%s\")", country_tag);
     } else if (only_owned) {
         snprintf(suffix, sizeof(suffix), " (owned by Mullvad)");
