@@ -22,10 +22,23 @@ bool apply_mullvad_relay(char *cmd_format, char *relay_name) {
     char output[256] = {0};
 
     FILE *cmd_result = popen(cmd, "r");
-    fgets(output, sizeof(output), cmd_result);
+
+    if (cmd_result == NULL) {
+        return false;
+    }
+
+    char *first_line = fgets(output, 256, cmd_result);
+    if (first_line == NULL) return false;
+
+    bool constraints_updated = strstr(output, "Relay constraints updated") != NULL;
+
+    while (fgets(output, sizeof(output), cmd_result) != NULL) {
+        // drain remaining output
+    }
+
     pclose(cmd_result);
 
-    return (strstr(output, "Relay constraints updated") != NULL);
+    return constraints_updated;
 }
 
 void cleanup_and_exit(int sig) {
