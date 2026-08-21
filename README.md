@@ -19,7 +19,7 @@
 - Connect to a random Mullvad relay server and switch every X seconds
 - Connect to predefined Mullvad relay servers and switch every X seconds
 - Filter only servers owned by Mullvad
-- Filter only servers located in a specific country
+- Filter only servers located in a specific country and, if desired, in a specific city
 - Option to use multihop
 
 ### Demonstration
@@ -116,3 +116,5 @@ Contributions are welcome. Feel free to open an [issue](https://github.com/spel9
 ## Note
 
 This project started as a C learning exercise and turned into something actually usable. If you find it useful, a star on the repo is always appreciated. More features and improvements are coming.
+
+Thank you to Mullvad for providing us with exceptional privacy and a great service ❤️.
