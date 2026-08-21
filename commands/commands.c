@@ -64,7 +64,7 @@ bool connect_relay(char *relay_name, int delay) {
         //connect to mullvad
         printf(COLOR_GREEN "Relay server change completed successfully\n" COLOR_OFF);
         system("mullvad connect");
-        printf("Switching relay in " COLOR_BOLD "%d secondes..." COLOR_OFF "\n--------------------\n\n", delay);
+        printf("Switching relay in " COLOR_BOLD "%d seconds..." COLOR_OFF "\n--------------------\n\n", delay);
     } else {
         printf(COLOR_RED "Error: invalid relay server name" COLOR_OFF "\n--------------------");
         return false;
@@ -89,7 +89,7 @@ bool connect_relay_multihop(char *relay_name_entry, char *relay_name_exit, int d
         //connect to mullvad
         printf(COLOR_GREEN "Relay server change completed successfully\n" COLOR_OFF);
         system("mullvad connect");
-        printf("Switching relay in " COLOR_BOLD "%d secondes..." COLOR_OFF "\n--------------------\n\n", delay);
+        printf("Switching relay in " COLOR_BOLD "%d seconds..." COLOR_OFF "\n--------------------\n\n", delay);
     } else {
         printf(COLOR_RED "Error: invalid relay server name" COLOR_OFF "\n--------------------");
         return false;
