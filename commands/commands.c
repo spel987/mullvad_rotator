@@ -75,7 +75,7 @@ bool connect_relay(char *relay_name, int delay) {
 
 bool connect_relay_multihop(char *relay_name_entry, char *relay_name_exit, int delay) {
     //enable multihop
-    bool enable_multihop = apply_mullvad_relay("mullvad relay set multihop off", "");
+    bool enable_multihop = apply_mullvad_relay("mullvad relay set multihop on", "");
 
     if (!enable_multihop) {
         printf(COLOR_RED "Error: unable to enable multihop mode\n" COLOR_OFF);
